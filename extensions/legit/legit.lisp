@@ -11,6 +11,7 @@
   Gets VCS data by calling lem/porcelain and asking lem/peek-legit to display data on the left window."))
 
 (in-package :lem/legit)
+(ql:quickload :split-sequence)
 
 #|
 An interactive interface to Git, with preliminary support for other version-control systems (Fossil, Mercurial).
@@ -510,36 +511,30 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
         ;; Latest commits.
         (lem/peek-legit:collector-insert "")
         (lem/peek-legit:collector-insert "Latest commits:" :header t)
-        (let ((latest-commits (lem/porcelain:latest-commits)))
-          (if latest-commits
-              (loop for commit in latest-commits
-                    for line = nil
-                    for hash = nil
-                    for message = nil
-                    if (consp commit)
-                      do (setf line (getf commit :line))
-                         (setf hash (getf commit :hash))
-                         (setf message (getf commit :message))
-                    else
-                      do (setf line commit)
+        (let* ((repo (cl-git:open-repository (lem-core/commands/project:find-root (buffer-directory))))
+               (head-ref (cl-git:repository-head repo))
+               (head-commit (cl-git:target head-ref))
+               (walker (cl-git:revision-walk head-commit :ordering :topological)))
+          (loop for i below 20 ;; TODO(Magic num) Reuse lem/porcelain:*nb-latest-commits* somehow?
+                for commit = (cl-git:next-revision walker)
+                while (not (null commit))
+                for shortlog = (first (split-sequence:split-sequence #\Newline (cl-git:message commit)))
+                for hash = (subseq (format nil "~40,'0X" (cl-git:oid commit)) 0 12) ;; TODO(Magic Num) 12 should be shorthash len
+                do (lem/peek-legit:with-appending-source
+                       (point :move-function (make-show-commit-function hash)
+                              :visit-file-function (lambda ())
+                              :stage-function (lambda () )
+                              :unstage-function (lambda () ))
+                     (with-point ((start point))
+                         (insert-string point hash :attribute 'lem/peek-legit:filename-attribute :read-only t)
+                       (insert-string point " ")
+                       (insert-string point shortlog)
 
-                    do (lem/peek-legit:with-appending-source
-                           (point :move-function (make-show-commit-function hash)
-                                  :visit-file-function (lambda ())
-                                  :stage-function (lambda () )
-                                  :unstage-function (lambda () ))
-                         (with-point ((start point))
-                           (when hash
-                             (insert-string point hash :attribute 'lem/peek-legit:filename-attribute :read-only t))
-                           (if message
-                               (insert-string point message)
-                               (insert-string point line))
-
-                           ;; Save the hash on this line for later use.
-                           (when hash
-                             (put-text-property start point :commit-hash hash)))))
-              (lem/peek-legit:collector-insert "<none>")))
-
+                       ;; Save the hash on this line for later use.
+                       (put-text-property start point :commit-hash hash)))
+                finally (when (zerop i)
+                          (lem/peek-legit:collector-insert "<none>")
+                          )))
         (add-hook (variable-value 'after-change-functions :buffer (lem/peek-legit:collector-buffer collector))
                   'change-grep-buffer)))))
 

@@ -1,6 +1,6 @@
 (defpackage :lem/legit
   (:use :cl
-   :lem)
+        :lem)
   (:export :legit-status
            :*prompt-for-commit-abort-p*
            :*ignore-all-space*)
@@ -121,7 +121,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
   (handler-bind ((lem/porcelain:porcelain-error
                    (lambda (c)
                      (lem:editor-error (slot-value c 'lem/porcelain::message)))))
-      (funcall function)))
+    (funcall function)))
 
 (defmacro with-porcelain-error (&body body)
   "Handle porcelain errors and turn them into a lem:editor-error."
@@ -240,9 +240,9 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
   (if (str:starts-with-p "@@ " (line-string start?))
       start?
       (save-excursion
-       (let ((point (search-backward-regexp start? "^\@\@")))
-         (when point
-           point)))))
+        (let ((point (search-backward-regexp start? "^\@\@")))
+          (when point
+            point)))))
 
 (defun %hunk-end-point (end?)
   "Find the end of the current hunk.
@@ -285,42 +285,42 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
   ;; We would NOT need to tediously move points to find lines.
 
   (save-excursion
-   (with-point ((keypresspoint (copy-point (current-point))))
-     ;; The first 4 lines are the patch header.
-     (let* ((diff-text (buffer-text (point-buffer keypresspoint)))
-            (diff-lines (str:lines diff-text))
-            (header (str:unlines (subseq diff-lines 0 4)))
-            hunk
-            patch)
-       ;; Get hunk at point.
-       (with-point ((start (copy-point keypresspoint) ) ;; @@
-                    (start? (copy-point keypresspoint))
-                    (end (copy-point keypresspoint))
-                    (end? (copy-point keypresspoint)))
-         (setf start (%hunk-start-point start?))
-         (unless start
-           (message "No hunk at point.")
-           (return-from %current-hunk))
-         (setf end (%hunk-end-point end?))
+    (with-point ((keypresspoint (copy-point (current-point))))
+      ;; The first 4 lines are the patch header.
+      (let* ((diff-text (buffer-text (point-buffer keypresspoint)))
+             (diff-lines (str:lines diff-text))
+             (header (str:unlines (subseq diff-lines 0 4)))
+             hunk
+             patch)
+        ;; Get hunk at point.
+        (with-point ((start (copy-point keypresspoint) ) ;; @@
+                     (start? (copy-point keypresspoint))
+                     (end (copy-point keypresspoint))
+                     (end? (copy-point keypresspoint)))
+          (setf start (%hunk-start-point start?))
+          (unless start
+            (message "No hunk at point.")
+            (return-from %current-hunk))
+          (setf end (%hunk-end-point end?))
 
-         (setf hunk (points-to-string start end))
-         (setf patch (str:concat header
-                                 (string #\newline)
-                                 hunk))
+          (setf hunk (points-to-string start end))
+          (setf patch (str:concat header
+                                  (string #\newline)
+                                  hunk))
 
-         (when (not (equal " " (last-character patch)))
-           ;; important for git patch.
-           (setf patch (str:join "" (list patch (string #\newline) " "))))
+          (when (not (equal " " (last-character patch)))
+            ;; important for git patch.
+            (setf patch (str:join "" (list patch (string #\newline) " "))))
 
-         ;; Delete current hunk in diff buffer, place cursor on next one.
-         (when (and start end)
-           (setf (buffer-read-only-p (current-buffer)) nil)
-           (delete-character start (count-characters start end))
-           ;; delete a remaining newline character and we are on the next hunk line.
-           (delete-character start 1)
-           (setf (buffer-read-only-p (current-buffer)) t))
+          ;; Delete current hunk in diff buffer, place cursor on next one.
+          (when (and start end)
+            (setf (buffer-read-only-p (current-buffer)) nil)
+            (delete-character start (count-characters start end))
+            ;; delete a remaining newline character and we are on the next hunk line.
+            (delete-character start 1)
+            (setf (buffer-read-only-p (current-buffer)) t))
 
-         patch)))))
+          patch)))))
 
 (defun run-function (fn &key message)
   "Run this function and show `message` and standard output
@@ -456,7 +456,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                  :visit-file-function (make-visit-file-function file)
                                  :stage-function (make-stage-function file)
                                  :unstage-function (lambda () (message "File is not tracked, can't be unstaged.")))
-                        (insert-string point file :attribute 'lem/peek-legit:filename-attribute :read-only t)))
+                          (insert-string point file :attribute 'lem/peek-legit:filename-attribute :read-only t)))
             (lem/peek-legit:collector-insert "<none>"))
 
         ;; Unstaged changes
@@ -472,15 +472,15 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                 :stage-function (make-stage-function file)
                                 :unstage-function (make-unstage-function file :already-unstaged t)
                                 :discard-file-function (make-discard-file-function file))
-                       (insert-string point 
-                                      (format nil "~10a ~a" 
-                                              (case type
-                                                (:modified "modified")
-                                                (:deleted "deleted")
-                                                (t ""))
-                                              file)
-                                      :attribute 'lem/peek-legit:filename-attribute 
-                                      :read-only t)))
+                         (insert-string point 
+                                        (format nil "~10a ~a" 
+                                                (case type
+                                                  (:modified "modified")
+                                                  (:deleted "deleted")
+                                                  (t ""))
+                                                file)
+                                        :attribute 'lem/peek-legit:filename-attribute 
+                                        :read-only t)))
             (lem/peek-legit:collector-insert "<none>"))
 
         ;; Staged changes
@@ -496,16 +496,16 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                 :stage-function (make-stage-function file)
                                 :unstage-function (make-unstage-function file)
                                 :discard-file-function (make-discard-file-function file :is-staged t))
-                       (insert-string point 
-                                      (format nil "~10a ~a" 
-                                              (case type
-                                                (:modified "modified")
-                                                (:added "created")
-                                                (:deleted "deleted")
-                                                (t ""))
-                                              file)
-                                      :attribute 'lem/peek-legit:filename-attribute 
-                                      :read-only t)))
+                         (insert-string point 
+                                        (format nil "~10a ~a" 
+                                                (case type
+                                                  (:modified "modified")
+                                                  (:added "created")
+                                                  (:deleted "deleted")
+                                                  (t ""))
+                                                file)
+                                        :attribute 'lem/peek-legit:filename-attribute 
+                                        :read-only t)))
             (lem/peek-legit:collector-insert "<none>"))
 
         ;; Latest commits.
@@ -525,123 +525,184 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                               :visit-file-function (lambda ())
                               :stage-function (lambda () )
                               :unstage-function (lambda () ))
-                     (with-point ((start point))
+                       (with-point ((start point))
                          (insert-string point hash :attribute 'lem/peek-legit:filename-attribute :read-only t)
-                       (insert-string point " ")
-                       (insert-string point shortlog)
+                         (insert-string point " ")
+                         (insert-string point shortlog)
 
-                       ;; Save the hash on this line for later use.
-                       (put-text-property start point :commit-hash hash)))
+                         ;; Save the hash on this line for later use.
+                         (put-text-property start point :commit-hash hash)))
                 finally (when (zerop i)
                           (lem/peek-legit:collector-insert "<none>")
                           )))
         (add-hook (variable-value 'after-change-functions :buffer (lem/peek-legit:collector-buffer collector))
                   'change-grep-buffer)))))
 
+
+(define-command legit-log () ()
+  "Show log."
+  (with-current-project ()
+    ;; big try! It works \o/
+    (lem/peek-legit:with-collecting-sources (collector :read-only nil)
+      ;; Header: current branch.
+      (lem/peek-legit:collector-insert collector
+                                       (format nil "Branch: ~a" (lem/porcelain:current-branch))
+                                       :header t)
+      (lem/peek-legit:collector-insert collector "")
+
+      ;; Latest commits.
+      (lem/peek-legit:collector-insert collector "")
+      (lem/peek-legit:collector-insert collector "Latest commits:" :header t)
+      (let* (
+             (buffer (lem/peek-legit:collector-buffer collector))
+             (repo (cl-git:open-repository (lem-core/commands/project:find-root (buffer-directory))))
+             (head-ref (cl-git:repository-head repo))
+             (head-commit (cl-git:target head-ref))
+             (walker (cl-git:revision-walk head-commit :ordering :topological)))
+        (labels ((add-log-entries () 
+                   (loop for i below 20 ;; TODO(Magic num) Reuse lem/porcelain:*nb-latest-commits* somehow?
+                         for commit = (cl-git:next-revision walker)
+                         while (not (null commit))
+                         for shortlog = (first (split-sequence:split-sequence #\Newline (cl-git:message commit)))
+                         for hash = (subseq (format nil "~40,'0X" (cl-git:oid commit)) 0 12) ;; TODO(Magic Num) 12 should be shorthash len
+                         do (lem/peek-legit:with-appending-source
+                                collector
+                                (point :move-function (make-show-commit-function hash)
+                                       :visit-file-function (lambda ())
+                                       :stage-function (lambda () )
+                                       :unstage-function (lambda () ))
+                              (with-point ((start point))
+                                (insert-string point hash :attribute 'lem/peek-legit:filename-attribute :read-only t)
+                                (insert-string point " ")
+                                (insert-string point shortlog)
+
+                                ;; Save the hash on this line for later use.
+                                (put-text-property start point :commit-hash hash)))
+                         finally
+                            (let ((point (buffer-end-point buffer)))
+                              (with-point ((start point))
+                                (insert-string point "whodunn")
+                                (put-text-property start point :move-marker t)
+                                (put-text-property start point :move-function #'add-log-entries) 
+                                )
+                              
+                         )
+                              )
+                             
+                         )
+                   )
+                     
+          (add-log-entries)
+          )
+        )
+      )
+    ))
+
 (defun prompt-for-branch (&key prompt initial-value)
-  ;; only call from a command.
-  (let* ((current-branch (or initial-value (lem/porcelain:current-branch)))
-         (candidates (lem/porcelain:branches)))
-    (if candidates
-        (prompt-for-string (or prompt "Branch: ")
-                           :initial-value current-branch
-                           :history-symbol '*legit-branches-history*
-                           :completion-function (lambda (x) (completion-strings x candidates))
-                           :test-function (lambda (name) (member name candidates :test #'string=)))
-        (message "No branches. Not inside a git project?"))))
+;; only call from a command.
+(let* ((current-branch (or initial-value (lem/porcelain:current-branch)))
+       (candidates (lem/porcelain:branches)))
+  (if candidates
+      (prompt-for-string (or prompt "Branch: ")
+                         :initial-value current-branch
+                         :history-symbol '*legit-branches-history*
+                         :completion-function (lambda (x) (completion-strings x candidates))
+                         :test-function (lambda (name) (member name candidates :test #'string=)))
+      (message "No branches. Not inside a git project?"))))
 
 (define-command legit-branch-checkout () ()
-  "Choose a branch to checkout."
-  (with-current-project ()
-    (let ((branch (prompt-for-branch))
-          (current-branch (lem/porcelain:current-branch)))
-      (when (equal branch current-branch)
-        (show-message (format nil "Already on ~a" branch) :timeout 3)
-        (return-from legit-branch-checkout))
-      (when branch
-        (run-function (lambda ()
-                        (lem/porcelain:checkout branch))
-                      :message (format nil "Checked out ~a" branch))
-        (legit-status)))))
+"Choose a branch to checkout."
+(with-current-project ()
+  (let ((branch (prompt-for-branch))
+        (current-branch (lem/porcelain:current-branch)))
+    (when (equal branch current-branch)
+      (show-message (format nil "Already on ~a" branch) :timeout 3)
+      (return-from legit-branch-checkout))
+    (when branch
+      (run-function (lambda ()
+                      (lem/porcelain:checkout branch))
+                    :message (format nil "Checked out ~a" branch))
+      (legit-status)))))
 
 (define-command legit-branch-create () ()
-  "Create and checkout a new branch."
-  (with-current-project ()
-    (let ((new (prompt-for-string "New branch name: "
-                                  :history-symbol '*new-branch-name-history*))
-          (base (prompt-for-branch :prompt "Base branch: " :initial-value "")))
-      (when (and new base)
-        (run-function (lambda ()
-                        (lem/porcelain:checkout-create new base))
-                      :message (format nil "Created ~a" new))
-        (legit-status)))))
+"Create and checkout a new branch."
+(with-current-project ()
+  (let ((new (prompt-for-string "New branch name: "
+                                :history-symbol '*new-branch-name-history*))
+        (base (prompt-for-branch :prompt "Base branch: " :initial-value "")))
+    (when (and new base)
+      (run-function (lambda ()
+                      (lem/porcelain:checkout-create new base))
+                    :message (format nil "Created ~a" new))
+      (legit-status)))))
 
 (define-command legit-pull () ()
-  "Pull changes, update HEAD."
-  (with-current-project ()
-    (run-function #'lem/porcelain:pull)))
+"Pull changes, update HEAD."
+(with-current-project ()
+  (run-function #'lem/porcelain:pull)))
 
 (define-command legit-push () ()
-  "Push changes to the current remote."
-  (with-current-project ()
-    (run-function #'lem/porcelain:push)))
+"Push changes to the current remote."
+(with-current-project ()
+  (run-function #'lem/porcelain:push)))
 
 (define-command legit-rebase-interactive () ()
-  "Rebase interactively, from the commit the point is on.
+"Rebase interactively, from the commit the point is on.
 
   Austostash pending changes, to enable the rebase and find the changes back afterwards."
-  (with-current-project ()
+(with-current-project ()
 
-    ;; Find the commit hash the point is on: mandatory.
-    (let ((commit-hash (text-property-at (current-point) :commit-hash)))
+  ;; Find the commit hash the point is on: mandatory.
+  (let ((commit-hash (text-property-at (current-point) :commit-hash)))
 
-      (unless commit-hash
-        (message "Not on a commit line?")
-        (return-from legit-rebase-interactive))
+    (unless commit-hash
+      (message "Not on a commit line?")
+      (return-from legit-rebase-interactive))
 
-      (run-function (lambda ()
-                      (lem/porcelain::rebase-interactively :from commit-hash)))
+    (run-function (lambda ()
+                    (lem/porcelain::rebase-interactively :from commit-hash)))
 
-      (let ((buffer (find-file-buffer ".git/rebase-merge/git-rebase-todo")))
-        (when buffer
-          (lem/peek-legit::quit)
-          (switch-to-buffer buffer)
-          (change-buffer-mode buffer 'legit-rebase-mode))))))
+    (let ((buffer (find-file-buffer ".git/rebase-merge/git-rebase-todo")))
+      (when buffer
+        (lem/peek-legit::quit)
+        (switch-to-buffer buffer)
+        (change-buffer-mode buffer 'legit-rebase-mode))))))
 
 (define-command legit-next-header () ()
-  "Move point to the next header of this VCS window."
-  (lem/peek-legit:peek-legit-next-header))
+"Move point to the next header of this VCS window."
+(lem/peek-legit:peek-legit-next-header))
 
 (define-command legit-previous-header () ()
-  "Move point to the previous header of this VCS window."
-  (lem/peek-legit:peek-legit-previous-header))
+"Move point to the previous header of this VCS window."
+(lem/peek-legit:peek-legit-previous-header))
 
 (define-command legit-quit () ()
-  "Quit"
-  (lem/peek-legit:quit)
-  (ignore-errors
-   (delete-buffer (get-buffer "*legit-diff*"))
-   (delete-buffer (get-buffer "*legit-help*"))))
+"Quit"
+(lem/peek-legit:quit)
+(ignore-errors
+  (delete-buffer (get-buffer "*legit-diff*"))
+  (delete-buffer (get-buffer "*legit-help*"))))
 
 (define-command legit-help () ()
-  "Show the important keybindings."
-  (with-pop-up-typeout-window (s (make-buffer "*legit-help*") :erase t)
-    (format s "Lem's interface to git. M-x legit-status (C-x g)~&")
-    (format s "~%")
-    (format s "Commands:~&")
-    (format s "(s)tage and (u)nstage a file. Inside a diff, (s)tage or (u)nstage a hunk.~&")
-    (format s "(k) discard changes.~&")
-    (format s "(c)ommit~&")
-    (format s "(b)ranches-> checkout another (b)ranch.~&")
-    (format s "          -> (c)reate.~&")
-    (format s "(F)etch, pull-> (p) from remote branch~&")
-    (format s "(P)push      -> (p) to remote branch~&")
-    (format s "(r)ebase     -> (i)nteractively from commit at point, (a)bort~&")
-    (format s "(g) -> refresh~&")
-    (format s "~%")
-    (format s "Navigate: n and p, C-n and C-p, M-n and M-p.~&")
-    (format s "Change windows: Tab, C-x o, M-o~&")
-    (format s "Quit: Escape, q, C-x 0.~&")
-    (format s "~%")
-    (format s "Show this help: C-x ? or ?, M-x legit-help")
-    ))
+"Show the important keybindings."
+(with-pop-up-typeout-window (s (make-buffer "*legit-help*") :erase t)
+  (format s "Lem's interface to git. M-x legit-status (C-x g)~&")
+  (format s "~%")
+  (format s "Commands:~&")
+  (format s "(s)tage and (u)nstage a file. Inside a diff, (s)tage or (u)nstage a hunk.~&")
+  (format s "(k) discard changes.~&")
+  (format s "(c)ommit~&")
+  (format s "(b)ranches-> checkout another (b)ranch.~&")
+  (format s "          -> (c)reate.~&")
+  (format s "(F)etch, pull-> (p) from remote branch~&")
+  (format s "(P)push      -> (p) to remote branch~&")
+  (format s "(r)ebase     -> (i)nteractively from commit at point, (a)bort~&")
+  (format s "(g) -> refresh~&")
+  (format s "~%")
+  (format s "Navigate: n and p, C-n and C-p, M-n and M-p.~&")
+  (format s "Change windows: Tab, C-x o, M-o~&")
+  (format s "Quit: Escape, q, C-x 0.~&")
+  (format s "~%")
+  (format s "Show this help: C-x ? or ?, M-x legit-help")
+  ))
+whodunnit

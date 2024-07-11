@@ -26,6 +26,7 @@
    :stage
    :unstage
    :vcs-project-p
+   :git-project-p
    )
   (:documentation "Functions to run VCS operations: get the list of changes, of untracked files, commit, push… Git support is the main goal, a simple layer is used with other VCS systems (Fossil, Mercurial).
 

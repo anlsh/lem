@@ -88,6 +88,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
 
 ;; redraw everything:
 (define-key lem/peek-legit:*peek-legit-keymap* "g" 'legit-status)
+(define-key lem/peek-legit:*peek-legit-keymap* "l" 'legit-log)
 
 ;; navigation
 (define-key *legit-diff-mode-keymap* "C-n" 'next-line)
@@ -548,6 +549,69 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
 
         (add-hook (variable-value 'after-change-functions :buffer (lem/peek-legit:collector-buffer collector))
                   'change-grep-buffer)))))
+
+(defun get-clgit-walker (path)
+  (arrow-macros:-> path
+    lem-core/commands/project:find-root
+    cl-git:open-repository
+    cl-git:repository-head
+    cl-git:target
+    (lambda (x) 
+      (cl-git:revision-walk x :ordering :topological))))
+
+(define-command legit-log () ()
+  "Show log buffer."
+  (with-current-project ()
+    (lem/peek-legit:with-collecting-sources (collector :read-only nil)
+      (if (not (lem/porcelain:git-project-p))
+          (lem/peek-legit:collector-insert collector "[Error] Only works for git repos" :header t)
+          (progn
+            (lem/peek-legit:collector-insert collector "[WARNING] Branching history is NOT shown well" :header t)
+
+            ;; Header: current branch.
+            (lem/peek-legit:collector-insert collector
+                                             (format nil "Branch: ~a" (lem/porcelain:current-branch))
+                                             :header t)
+            (lem/peek-legit:collector-insert collector "")
+
+            ;; Commits.
+            (let* ((entry-group-size 20) ;; TODO(Magic number) Add parameter to control number?
+                   (shorthash-size 12)   ;; TODO(Magic number) Add parameter to control hash length?
+                   (walker (get-clgit-walker (buffer-directory)))
+                   (buffer (lem/peek-legit:collector-buffer collector)))
+              (labels ((add-log-entries () 
+                         (loop for i below entry-group-size
+                               for commit = (cl-git:next-revision walker)
+                               while (not (null commit))
+                               for shortlog = (first (split-sequence:split-sequence #\Newline (cl-git:message commit)))
+                               for hash = (subseq (format nil "~40,'0x" (cl-git:oid commit)) 0 shorthash-size)
+                               do (lem/peek-legit:with-appending-source
+                                      collector
+                                    (point :move-function (make-show-commit-function hash)
+                                           :visit-file-function (lambda ())
+                                           :stage-function (lambda () )
+                                           :unstage-function (lambda () ))
+                                    (with-point ((start point))
+                                      (insert-string point hash :attribute 'lem/peek-legit:filename-attribute :read-only t)
+                                      (insert-string point " ")
+                                      (insert-string point shortlog)
+
+                                      ;; Save the hash on this line for later use.
+                                      (put-text-property start point :commit-hash hash)))
+                               finally
+                                  (when (and commit (cl-git:parents commit))
+                                    (let ((point (buffer-end-point buffer)))
+                                      (with-point ((start point))
+                                        (insert-string point "More")
+                                        (put-text-property start point :move-marker t)
+                                        (put-text-property start point :move-function 
+                                                           (lambda () 
+                                                             (save-excursion (let ((point (buffer-end-point buffer)))
+                                                                               (with-point ((eob point))
+                                                                                 (move-to-beginning-of-line)
+                                                                                 (delete-between-points (buffer-point buffer) eob))
+                                                                               (add-log-entries)))))))))))
+                (add-log-entries))))))))
 
 (defun prompt-for-branch (&key prompt initial-value)
   ;; only call from a command.

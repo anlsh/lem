@@ -243,13 +243,13 @@ Notes:
     buffer))
 
 (defun call-with-collecting-sources (function &key read-only)
-  (let* ((*collector* (make-instance 'collector :buffer (make-peek-legit-buffer)))
-         (point (buffer-point (collector-buffer *collector*))))
+  (let* ((collector (make-instance 'collector :buffer (make-peek-legit-buffer)))
+         (point (buffer-point (collector-buffer collector))))
     (declare (ignorable point))
-    (funcall function *collector*)
+    (funcall function collector)
     (when read-only
-      (setf (buffer-read-only-p (collector-buffer *collector*)) t))
-      (display *collector*)))
+      (setf (buffer-read-only-p (collector-buffer collector)) t))
+      (display collector)))
 
 (defmacro with-collecting-sources ((collector &key (read-only t)) &body body)
   `(call-with-collecting-sources (lambda (,collector)

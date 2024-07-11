@@ -433,21 +433,23 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
       (lem/peek-legit:with-collecting-sources (collector :read-only nil)
         ;; Header: current branch.
         (lem/peek-legit:collector-insert
+         collector
          (format nil "Branch: ~a" (lem/porcelain:current-branch))
          :header t)
-        (lem/peek-legit:collector-insert "")
+        (lem/peek-legit:collector-insert collector "")
 
         ;; Is a git rebase in progress?
         (let ((rebase-status (lem/porcelain::rebase-in-progress)))
           (when (getf rebase-status :status)
             (lem/peek-legit:collector-insert
+             collector
              (format nil "!rebase in progress: ~a onto ~a"
                      (getf rebase-status :head-short-name)
                      (getf rebase-status :onto-short-commit)))
-            (lem/peek-legit:collector-insert "")))
+            (lem/peek-legit:collector-insert collector "")))
 
         ;; Untracked files.
-        (lem/peek-legit:collector-insert (format nil "Untracked files (~a):" (length untracked-files)) :header t)
+        (lem/peek-legit:collector-insert collector (format nil "Untracked files (~a):" (length untracked-files)) :header t)
         (if untracked-files
             (loop :for file :in untracked-files
                   :do (lem/peek-legit:with-appending-source
@@ -456,11 +458,11 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                  :stage-function (make-stage-function file)
                                  :unstage-function (lambda () (message "File is not tracked, can't be unstaged.")))
                         (insert-string point file :attribute 'lem/peek-legit:filename-attribute :read-only t)))
-            (lem/peek-legit:collector-insert "<none>"))
+            (lem/peek-legit:collector-insert collector "<none>"))
 
         ;; Unstaged changes
-        (lem/peek-legit:collector-insert "")
-        (lem/peek-legit:collector-insert (format nil "Unstaged changes (~a):" (length unstaged-files)) :header t)
+        (lem/peek-legit:collector-insert collector "")
+        (lem/peek-legit:collector-insert collector (format nil "Unstaged changes (~a):" (length unstaged-files)) :header t)
         (if unstaged-files
             (loop for file-info in unstaged-files
                   for file = (getf file-info :file)
@@ -480,11 +482,11 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                               file)
                                       :attribute 'lem/peek-legit:filename-attribute 
                                       :read-only t)))
-            (lem/peek-legit:collector-insert "<none>"))
+            (lem/peek-legit:collector-insert collector "<none>"))
 
         ;; Staged changes
-        (lem/peek-legit:collector-insert "")
-        (lem/peek-legit:collector-insert (format nil "Staged changes (~a):" (length staged-files)) :header t)
+        (lem/peek-legit:collector-insert collector "")
+        (lem/peek-legit:collector-insert collector (format nil "Staged changes (~a):" (length staged-files)) :header t)
         (if staged-files
             (loop for file-info in staged-files
                   for file = (getf file-info :file)
@@ -505,11 +507,11 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                               file)
                                       :attribute 'lem/peek-legit:filename-attribute 
                                       :read-only t)))
-            (lem/peek-legit:collector-insert "<none>"))
+            (lem/peek-legit:collector-insert collector "<none>"))
 
         ;; Latest commits.
-        (lem/peek-legit:collector-insert "")
-        (lem/peek-legit:collector-insert "Latest commits:" :header t)
+        (lem/peek-legit:collector-insert collector "")
+        (lem/peek-legit:collector-insert collector "Latest commits:" :header t)
         (let ((latest-commits (lem/porcelain:latest-commits)))
           (if latest-commits
               (loop for commit in latest-commits
@@ -538,7 +540,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                            ;; Save the hash on this line for later use.
                            (when hash
                              (put-text-property start point :commit-hash hash)))))
-              (lem/peek-legit:collector-insert "<none>")))
+              (lem/peek-legit:collector-insert collector "<none>")))
 
         (add-hook (variable-value 'after-change-functions :buffer (lem/peek-legit:collector-buffer collector))
                   'change-grep-buffer)))))

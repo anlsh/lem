@@ -287,8 +287,8 @@ Notes:
                                ,unstage-function
                                ,discard-file-function))
 
-(defun collector-insert (s &key (newline t) header)
-  (let ((point (buffer-point (collector-buffer *collector*))))
+(defun collector-insert (collector s &key (newline t) header)
+  (let ((point (buffer-point (collector-buffer collector))))
     (with-point ((start point))
       (character-offset start 1)
       (insert-string point s :read-only t)

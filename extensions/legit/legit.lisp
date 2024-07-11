@@ -453,6 +453,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
         (if untracked-files
             (loop :for file :in untracked-files
                   :do (lem/peek-legit:with-appending-source
+                          collector
                           (point :move-function (make-diff-function file)
                                  :visit-file-function (make-visit-file-function file)
                                  :stage-function (make-stage-function file)
@@ -468,6 +469,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                   for file = (getf file-info :file)
                   for type = (getf file-info :type)
                   do (lem/peek-legit:with-appending-source
+                         collector
                          (point :move-function (make-diff-function file :type type)
                                 :visit-file-function (make-visit-file-function file)
                                 :stage-function (make-stage-function file)
@@ -492,6 +494,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                   for file = (getf file-info :file)
                   for type = (getf file-info :type)
                   do (lem/peek-legit:with-appending-source
+                         collector
                          (point :move-function (make-diff-function file :cached t :type type)
                                 :visit-file-function (make-visit-file-function file)
                                 :stage-function (make-stage-function file)
@@ -526,6 +529,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                       do (setf line commit)
 
                     do (lem/peek-legit:with-appending-source
+                           collector
                            (point :move-function (make-show-commit-function hash)
                                   :visit-file-function (lambda ())
                                   :stage-function (lambda () )

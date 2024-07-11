@@ -257,13 +257,14 @@ Notes:
                                    ,@body)
                                  :read-only ,read-only))
 
-(defun call-with-appending-source (insert-function
+(defun call-with-appending-source (collector
+                                   insert-function
                                    move-function
                                    visit-file-function
                                    stage-function
                                    unstage-function
                                    discard-file-function)
-  (let ((point (buffer-point (collector-buffer *collector*))))
+  (let ((point (buffer-point (collector-buffer collector))))
     (with-point ((start point))
       (funcall insert-function point)
       (unless (start-line-p point)
@@ -273,14 +274,17 @@ Notes:
       (set-stage-function start point stage-function)
       (set-unstage-function start point unstage-function)
       (set-discard-file-function start point discard-file-function))
-    (incf (collector-count *collector*))))
+    (incf (collector-count collector))))
 
-(defmacro with-appending-source ((point &key move-function
+(defmacro with-appending-source (collector 
+                                 (point &key move-function
                                              visit-file-function
                                              stage-function
                                              unstage-function
-                                             discard-file-function) &body body)
-  `(call-with-appending-source (lambda (,point) ,@body)
+                                             discard-file-function)
+                                 &body body)
+  `(call-with-appending-source ,collector
+                               (lambda (,point) ,@body)
                                ,move-function
                                ,visit-file-function
                                ,stage-function

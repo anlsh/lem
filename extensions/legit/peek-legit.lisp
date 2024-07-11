@@ -68,8 +68,6 @@ Notes:
 (define-attribute highlight
   (t :background :base0D))
 
-(defvar *collector*)
-
 (defclass collector ()
   ((buffer :initarg :buffer
            :reader collector-buffer)

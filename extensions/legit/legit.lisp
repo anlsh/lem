@@ -568,15 +568,15 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
             ;; Commits.
             (let* ((entry-group-size 20) ;; TODO(Magic number) Add parameter to control number?
                    (shorthash-size 12)   ;; TODO(Magic number) Add parameter to control hash length?
-                   (walker (lem/porcelain:pcommit-ancestors-iterator (lem/porcelain:get-current-pcommit 
+                   (walker (lem/porcelain:commit-ancestors-iterator (lem/porcelain:get-current-commit 
                                                                       (uiop:getcwd) )))
                    (buffer (lem/peek-legit:collector-buffer collector)))
               (labels ((add-log-entries () 
                          (loop for i below entry-group-size
                                for (commit more) = (multiple-value-list (picl:next walker))
                                while more
-                               for shortlog = (first (split-sequence:split-sequence #\Newline (lem/porcelain:pcommit-message commit)))
-                               for hash = (subseq (format nil "~40,'0x" (lem/porcelain:pcommit-hash commit)) 0 shorthash-size)
+                               for shortlog = (first (split-sequence:split-sequence #\Newline (lem/porcelain:commit-message commit)))
+                               for hash = (subseq (format nil "~40,'0x" (lem/porcelain:commit-hash commit)) 0 shorthash-size)
                                do (lem/peek-legit:with-appending-source
                                       collector
                                     (point :move-function (make-show-commit-function hash)

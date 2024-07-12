@@ -16,11 +16,11 @@
    :current-branch
    :discard-file
    :file-diff
-   :get-current-pcommit
+   :get-current-commit
    :latest-commits
-   :pcommit-hash
-   :pcommit-message
-   :pcommit-ancestors-iterator
+   :commit-hash
+   :commit-message
+   :commit-ancestors-iterator
    :pull
    :push
    :rebase-abort
@@ -881,13 +881,13 @@ I am stopping in case you still have something valuable there."))
     (t
       (porcelain-error  "No git rebase in process? PID not found."))))
 
-(defclass pcommit () 
+(defclass commit () 
   ;; A "porcelain commit": Abstraction around git/hg/fossil commits
   ;; A commit must implement the generic functions below.
   ())
 
-(defun get-current-pcommit (repo-path)
-  ;; Given `repo-path` (string), return the pcommit object representing the HEAD.
+(defun get-current-commit (repo-path)
+  ;; Given `repo-path` (string), return the commit object representing the HEAD.
   ;; TODO(WART) repo-path has to end with "/" for the command to work
   (let ((dotgit-dir (merge-pathnames ".git" repo-path)))
     (or  (when (uiop/filesystem:directory-exists-p dotgit-dir)
@@ -898,29 +898,29 @@ I am stopping in case you still have something valuable there."))
          (error (format nil "No .git directory for ~a" repo-path)))))
       
 
-(defgeneric pcommit-parents (commit)
+(defgeneric commit-parents (commit)
   ;; Returns a list of commit objects representing the parents of `commit`
   )
 
-(defgeneric pcommit-message (commit)
+(defgeneric commit-message (commit)
   ;; Returns the commit message of `commit`, as a string
   )
 
-(defgeneric pcommit-hash (commit)
+(defgeneric commit-hash (commit)
   ;; Returns the hash of `commit`, as a string
   )
 
-(defun pcommit-ancestors-iterator (pcommit)
-  ;; Return a picl iterator over the ancestors of pcommit suitable for logging.
+(defun commit-ancestors-iterator (commit)
+  ;; Return a picl iterator over the ancestors of commit suitable for logging.
   ;; TODO The implementation is... not very good. It'll show ancestors in topological
   ;; order, with duplicates.
-  (picl:chain (list pcommit) (picl:chain-from-iter (picl:map #'pcommit-ancestors-iterator (pcommit-parents pcommit)))))
+  (picl:chain (list commit) (picl:chain-from-iter (picl:map #'commit-ancestors-iterator (commit-parents commit)))))
 
-;; pcommit implementation for git.
-(defmethod pcommit-parents ((commit cl-git:commit))
+;; commit implementation for git.
+(defmethod commit-parents ((commit cl-git:commit))
   (cl-git:parents commit))
-(defmethod pcommit-message ((commit cl-git:commit))
+(defmethod commit-message ((commit cl-git:commit))
   (cl-git:message commit))
-(defmethod pcommit-hash ((commit cl-git:commit))
+(defmethod commit-hash ((commit cl-git:commit))
   (cl-git:oid commit))
 

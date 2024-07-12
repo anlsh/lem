@@ -550,15 +550,6 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
         (add-hook (variable-value 'after-change-functions :buffer (lem/peek-legit:collector-buffer collector))
                   'change-grep-buffer)))))
 
-(defun get-clgit-walker (path)
-  (arrow-macros:-> path
-    lem-core/commands/project:find-root
-    cl-git:open-repository
-    cl-git:repository-head
-    cl-git:target
-    (lambda (x) 
-      (cl-git:revision-walk x :ordering :topological))))
-
 (define-command legit-log () ()
   "Show log buffer."
   (with-current-project ()
@@ -577,14 +568,15 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
             ;; Commits.
             (let* ((entry-group-size 20) ;; TODO(Magic number) Add parameter to control number?
                    (shorthash-size 12)   ;; TODO(Magic number) Add parameter to control hash length?
-                   (walker (get-clgit-walker (buffer-directory)))
+                   (walker (lem/porcelain:pcommit-ancestors-iterator (lem/porcelain:get-current-pcommit 
+                                                                      (uiop:getcwd) )))
                    (buffer (lem/peek-legit:collector-buffer collector)))
               (labels ((add-log-entries () 
                          (loop for i below entry-group-size
-                               for commit = (cl-git:next-revision walker)
-                               while (not (null commit))
-                               for shortlog = (first (split-sequence:split-sequence #\Newline (cl-git:message commit)))
-                               for hash = (subseq (format nil "~40,'0x" (cl-git:oid commit)) 0 shorthash-size)
+                               for (commit more) = (multiple-value-list (picl:next walker))
+                               while more
+                               for shortlog = (first (split-sequence:split-sequence #\Newline (lem/porcelain:pcommit-message commit)))
+                               for hash = (subseq (format nil "~40,'0x" (lem/porcelain:pcommit-hash commit)) 0 shorthash-size)
                                do (lem/peek-legit:with-appending-source
                                       collector
                                     (point :move-function (make-show-commit-function hash)
@@ -599,7 +591,7 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
                                       ;; Save the hash on this line for later use.
                                       (put-text-property start point :commit-hash hash)))
                                finally
-                                  (when (and commit (cl-git:parents commit))
+                                  (when more
                                     (let ((point (buffer-end-point buffer)))
                                       (with-point ((start point))
                                         (insert-string point "More")

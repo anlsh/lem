@@ -258,7 +258,7 @@
 (defsystem "lem/legit"
   :serial t
   :depends-on ("lem" "lem-patch-mode" "lem-yaml-mode" "lem-markdown-mode"
-               "cl-git" "split-sequence" "arrow-macros")
+               "cl-git" "split-sequence" "arrow-macros" "picl")
   :components ((:module "extensions/legit"
                 :components ((:file "porcelain")
                              (:file "peek-legit")

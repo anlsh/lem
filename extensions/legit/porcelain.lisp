@@ -16,7 +16,11 @@
    :current-branch
    :discard-file
    :file-diff
+   :get-current-pcommit
    :latest-commits
+   :pcommit-hash
+   :pcommit-message
+   :pcommit-ancestors-iterator
    :pull
    :push
    :rebase-abort
@@ -876,3 +880,47 @@ I am stopping in case you still have something valuable there."))
      (run-git (list "rebase" "--skip")))
     (t
       (porcelain-error  "No git rebase in process? PID not found."))))
+
+(defclass pcommit () 
+  ;; A "porcelain commit": Abstraction around git/hg/fossil commits
+  ;; A commit must implement the generic functions below.
+  ())
+
+(defun get-current-pcommit (repo-path)
+  ;; Given `repo-path` (string), return the pcommit object representing the HEAD.
+  ;; TODO(WART) repo-path has to end with "/" for the command to work
+  (let ((dotgit-dir (merge-pathnames ".git" repo-path)))
+    (or  (when (uiop/filesystem:directory-exists-p dotgit-dir)
+           (arrow-macros:-> dotgit-dir
+             cl-git:open-repository
+             cl-git:repository-head
+             cl-git:target))
+         (error (format nil "No .git directory for ~a" repo-path)))))
+      
+
+(defgeneric pcommit-parents (commit)
+  ;; Returns a list of commit objects representing the parents of `commit`
+  )
+
+(defgeneric pcommit-message (commit)
+  ;; Returns the commit message of `commit`, as a string
+  )
+
+(defgeneric pcommit-hash (commit)
+  ;; Returns the hash of `commit`, as a string
+  )
+
+(defun pcommit-ancestors-iterator (pcommit)
+  ;; Return a picl iterator over the ancestors of pcommit suitable for logging.
+  ;; TODO The implementation is... not very good. It'll show ancestors in topological
+  ;; order, with duplicates.
+  (picl:chain (list pcommit) (picl:chain-from-iter (picl:map #'pcommit-ancestors-iterator (pcommit-parents pcommit)))))
+
+;; pcommit implementation for git.
+(defmethod pcommit-parents ((commit cl-git:commit))
+  (cl-git:parents commit))
+(defmethod pcommit-message ((commit cl-git:commit))
+  (cl-git:message commit))
+(defmethod pcommit-hash ((commit cl-git:commit))
+  (cl-git:oid commit))
+

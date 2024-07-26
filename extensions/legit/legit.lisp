@@ -583,13 +583,11 @@ Currently Git-only. Concretely, this calls Git with the -w option.")
   ;; only call from a command.
   (let* ((current-branch (or initial-value (lem/porcelain:current-branch vcs)))
          (candidates (lem/porcelain:branches vcs)))
-    (if candidates
-        (prompt-for-string (or prompt "Branch: ")
-                           :initial-value current-branch
-                           :history-symbol '*legit-branches-history*
-                           :completion-function (lambda (x) (completion-strings x candidates))
-                           :test-function (lambda (name) (member name candidates :test #'string=)))
-        (message "No branches. Not inside a git project?"))))
+    (prompt-for-string (or prompt "Branch: ")
+                       :initial-value current-branch
+                       :history-symbol '*legit-branches-history*
+                       :completion-function (lambda (x) (completion-strings x candidates))
+                       :test-function (lambda (name) (member name candidates :test #'string=)))))
 
 (define-command legit-branch-checkout () ()
   "Choose a branch to checkout."

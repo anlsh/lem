@@ -65,22 +65,25 @@
   (:actual-type :pointer))
 (cffi:define-parse-method string-of-strings ()
   (make-instance 'string-of-strings))
+;; It's inefficient to store the array of string pointers in both the second return
+;; value of translate-to-foreign and (necessarily) foreign memory- but I can't get
+;; the "efficient" way to work.
+;; Also this likely isn't performance sensitive. Like at all.
 (defmethod cffi:translate-to-foreign (val (type string-of-strings))
-  (cffi:foreign-alloc :pointer :null-terminated-p t :initial-contents (mapcar (lambda (str) (cffi:foreign-string-alloc str))
-                                                                              val)))
-(defmethod cffi:free-translated-object (pointer (type string-of-strings) _)
-  (declare (ignore _))
-  (loop with curr-ptr = pointer
-        while (not (cffi:null-pointer-p curr-ptr))
-        do (progn (cffi:foreign-string-free curr-ptr)
-                  (cffi:incf-pointer curr-ptr (cffi:foreign-type-size :pointer)))))
+  (let ((string-pointers (map 'vector  (lambda (str) (cffi:foreign-string-alloc str)) val)))
+    (values (cffi:foreign-alloc :pointer :null-terminated-p t :initial-contents string-pointers)
+            string-pointers)))
+(defmethod cffi:free-translated-object (pointer (type string-of-strings) string-pointers)
+  (map nil (lambda (p) (cffi:foreign-string-free p))
+       string-pointers)
+  (cffi:foreign-free pointer))
 
 (cffi:defcfun ("terminal_new" %terminal-new) :pointer
   (id :int)
   (rows :int)
   (cols :int)
   (program :string)
-  (argv :pointer)
+  (argv (string-of-strings))
   (cb_damage :pointer)
   (cb_moverect :pointer)
   (cb_movecursor :pointer)
@@ -92,12 +95,12 @@
 
 (defun terminal-new (directory id rows cols)
   (let* ((shell (or (uiop:getenv "SHELL") "/bin/bash"))
-         (argv (list (concatenate 'string shell "-c 'cd " directory "; " shell "'"))))
+         (argv (list shell "-c" (concatenate 'string "cd " directory "; " shell))))
     (%terminal-new id
                    rows
                    cols
                    shell
-                   (cffi:null-pointer)
+                   argv
                    (cffi:callback cb-damage)
                    (cffi:callback cb-moverect)
                    (cffi:callback cb-movecursor)

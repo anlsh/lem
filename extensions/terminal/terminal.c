@@ -153,7 +153,10 @@ struct terminal *terminal_new(int id,
 			      void *cb_sb_pushline,
                               void *cb_sb_popline)
 {
-  run_shell_result result = run_shell(rows, cols, program, argv);
+  char* cmd_1 = "-c";
+  char* cmd_2 = "cd /tmp/; /bin/bash";
+  char* argv_hard[4] = {program, cmd_1, cmd_2, NULL};
+  run_shell_result result = run_shell(rows, cols, program, argv_hard);
 
   VTerm *vterm = vterm_new(rows, cols);
   vterm_set_utf8(vterm, 1);

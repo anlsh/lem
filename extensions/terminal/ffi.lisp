@@ -59,6 +59,22 @@
 (defconstant VTERM_MOD_ALT #x02)
 (defconstant VTERM_MOD_CTRL #x04)
 
+;; Define a type corresponding to char*[], where the array is null-terminated
+(cffi:define-foreign-type string-of-strings ()
+  ()
+  (:actual-type :pointer))
+(cffi:define-parse-method string-of-strings ()
+  (make-instance 'string-of-strings))
+(defmethod cffi:translate-to-foreign (val (type string-of-strings))
+  (cffi:foreign-alloc :pointer :null-terminated-p t :initial-contents (mapcar (lambda (str) (cffi:foreign-string-alloc str))
+                                                                              val)))
+(defmethod cffi:free-translated-object (pointer (type string-of-strings) _)
+  (declare (ignore _))
+  (loop with curr-ptr = pointer
+        while (not (cffi:null-pointer-p curr-ptr))
+        do (progn (cffi:foreign-string-free curr-ptr)
+                  (cffi:incf-pointer curr-ptr (cffi:foreign-type-size :pointer)))))
+
 (cffi:defcfun ("terminal_new" %terminal-new) :pointer
   (id :int)
   (rows :int)

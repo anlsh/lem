@@ -64,6 +64,7 @@
   (rows :int)
   (cols :int)
   (program :string)
+  (argv :pointer)
   (cb_damage :pointer)
   (cb_moverect :pointer)
   (cb_movecursor :pointer)
@@ -73,19 +74,22 @@
   (cb_sb_pushline :pointer)
   (cb_sb_popline :pointer))
 
-(defun terminal-new (id rows cols)
-  (%terminal-new id
-                 rows
-                 cols
-                 (or (uiop:getenv "SHELL") "/bin/bash")
-                 (cffi:callback cb-damage)
-                 (cffi:callback cb-moverect)
-                 (cffi:callback cb-movecursor)
-                 (cffi:callback cb-settermprop)
-                 (cffi:callback cb-bell)
-                 (cffi:callback cb-resize)
-                 (cffi:callback cb-sb-pushline)
-                 (cffi:callback cb-sb-popline)))
+(defun terminal-new (directory id rows cols)
+  (let* ((shell (or (uiop:getenv "SHELL") "/bin/bash"))
+         (argv (list (concatenate 'string shell "-c 'cd " directory "; " shell "'"))))
+    (%terminal-new id
+                   rows
+                   cols
+                   shell
+                   (cffi:null-pointer)
+                   (cffi:callback cb-damage)
+                   (cffi:callback cb-moverect)
+                   (cffi:callback cb-movecursor)
+                   (cffi:callback cb-settermprop)
+                   (cffi:callback cb-bell)
+                   (cffi:callback cb-resize)
+                   (cffi:callback cb-sb-pushline)
+                   (cffi:callback cb-sb-popline))))
 
 (cffi:defcfun ("terminal_delete" terminal-delete) :void
   (terminal :pointer))
